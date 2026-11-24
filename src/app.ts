@@ -1,4 +1,5 @@
 import express from "express";
+import compression from "compression";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -10,10 +11,19 @@ import uploadRoutes from "./routes/upload.routes.js";
 import vendorServiceRoutes from "./routes/vendorService.routes.js";
 import adminServiceRoutes from "./routes/adminService.routes.js";
 import publicServiceRoutes from "./routes/publicService.routes.js";
+import customerBookingRoutes from "./routes/customerBooking.routes.js";
+import vendorBookingRoutes from "./routes/vendorBooking.routes.js";
+import vendorStatsRoutes from "./routes/vendorStats.routes.js";
+import userRoutes from "./routes/user.routes.js";
 
 const app = express();
 
+if (env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
+
 app.use(helmet());
+app.use(compression());
 
 app.use(
   cors({
@@ -44,6 +54,10 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/vendor/services", vendorServiceRoutes);
 app.use("/api/admin/services", adminServiceRoutes);
 app.use("/api/services", publicServiceRoutes);
+app.use("/api/customer/bookings", customerBookingRoutes);
+app.use("/api/vendor/bookings", vendorBookingRoutes);
+app.use("/api/vendor/stats", vendorStatsRoutes);
+app.use("/api/users", userRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
