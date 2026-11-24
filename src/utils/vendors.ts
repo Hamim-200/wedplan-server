@@ -1,3 +1,4 @@
+import type { ObjectId } from "mongodb";
 import { getDB } from "../config/db.js";
 import { parseObjectId } from "./ids.js";
 import { isPremiumActive } from "./premium.js";
@@ -10,6 +11,16 @@ export interface VendorSummary {
   isPremium: boolean;
 }
 
+// Describes the part of a Better Auth user that we read here.
+interface UserRow {
+  _id: ObjectId | string;
+  name: string;
+  image?: string | null;
+  businessName?: string | null;
+  subscriptionPlan?: string;
+  subscriptionExpiresAt?: Date | null;
+}
+
 // Adds a safe "vendor" object (no email) to every service in the list.
 export async function attachVendors<T extends { vendorId: string }>(
   items: T[]
@@ -18,13 +29,13 @@ export async function attachVendors<T extends { vendorId: string }>(
   if (ids.length === 0) return [];
 
   // Better Auth may store _id as ObjectId or string, so we search for both.
-  const lookup = ids.flatMap((id) => {
+  const lookup: Array<ObjectId | string> = ids.flatMap((id) => {
     const oid = parseObjectId(id);
     return oid ? [oid, id] : [id];
   });
 
   const users = await getDB()
-    .collection("users")
+    .collection<UserRow>("users")
     .find(
       { _id: { $in: lookup } },
       {
