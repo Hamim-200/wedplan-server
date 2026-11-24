@@ -1,6 +1,9 @@
+import type { ObjectId } from "mongodb";
 import { getDB } from "../config/db.js";
+import { ACTIVE_BOOKING_STATUSES } from "../constants/booking.js";
 import { FREE_PLAN_ACTIVE_LIMIT } from "../constants/service.js";
 import type { AuthUser } from "../types/auth.js";
+import type { BookingDoc } from "../types/booking.js";
 import type { ServiceDoc } from "../types/service.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -12,9 +15,9 @@ import {
   createServiceSchema,
   updateServiceSchema,
 } from "../validators/service.schemas.js";
-import type { ObjectId } from "mongodb";
 
 const services = () => getDB().collection<ServiceDoc>("services");
+const bookings = () => getDB().collection<BookingDoc>("bookings");
 
 // Free vendors may have at most 3 active (non-rejected) services.
 async function assertWithinPlanLimit(user: AuthUser, excludeId?: ObjectId) {
@@ -126,6 +129,17 @@ export const setAvailability = asyncHandler(async (req, res) => {
 
 export const deleteMyService = asyncHandler(async (req, res) => {
   const service = await findOwnedService(String(req.params.id), getUser(req));
+
+  const activeBookings = await bookings().countDocuments({
+    serviceId: String(service._id),
+    status: { $in: ACTIVE_BOOKING_STATUSES },
+  });
+  if (activeBookings > 0) {
+    throw ApiError.conflict(
+      "This service has pending or accepted bookings. Handle those first, or set the service to inactive instead."
+    );
+  }
+
   await services().deleteOne({ _id: service._id });
   res.json({ success: true, message: "Service deleted" });
 });
