@@ -9,6 +9,7 @@ import meRoutes from "./routes/me.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import vendorServiceRoutes from "./routes/vendorService.routes.js";
 import adminServiceRoutes from "./routes/adminService.routes.js";
+import publicServiceRoutes from "./routes/publicService.routes.js";
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use("/api/me", meRoutes); // temporary test routes, removed later
 app.use("/api/upload", uploadRoutes);
 app.use("/api/vendor/services", vendorServiceRoutes);
 app.use("/api/admin/services", adminServiceRoutes);
+app.use("/api/services", publicServiceRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
