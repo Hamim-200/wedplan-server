@@ -1,0 +1,118 @@
+@server = http://localhost:5000
+@client = http://localhost:3000
+
+### A. Sign up the test vendor (skip if it already exists)
+POST {{client}}/api/auth/sign-up/email
+Content-Type: application/json
+Origin: {{client}}
+
+{
+  "name": "Test Vendor",
+  "email": "vendor@test.com",
+  "password": "Test1234",
+  "role": "vendor",
+  "businessName": "Dream Weddings Studio"
+}
+
+### B. Sign in as vendor
+POST {{client}}/api/auth/sign-in/email
+Content-Type: application/json
+Origin: {{client}}
+
+{ "email": "vendor@test.com", "password": "Test1234" }
+
+### C. Get the vendor token (always send B right before C)
+# @name vendorTokenReq
+GET {{client}}/api/auth/token
+Origin: {{client}}
+
+### D. Sign in as admin
+POST {{client}}/api/auth/sign-in/email
+Content-Type: application/json
+Origin: {{client}}
+
+{ "email": "admin@wedplan.com", "password": "Admin1234" }
+
+### E. Get the admin token (always send D right before E)
+# @name adminTokenReq
+GET {{client}}/api/auth/token
+Origin: {{client}}
+
+### 1. Upload without a token (expect 401)
+POST {{server}}/api/upload
+
+### 2. Upload an image as vendor (expect 201 with a url)
+# @name uploadReq
+POST {{server}}/api/upload
+Authorization: Bearer {{vendorTokenReq.response.body.token}}
+Content-Type: multipart/form-data; boundary=WedPlanBoundary
+
+--WedPlanBoundary
+Content-Disposition: form-data; name="image"; filename="test.jpg"
+Content-Type: image/jpeg
+
+< ./test.jpg
+--WedPlanBoundary--
+
+### 3. Create a service with bad data (expect 400 with field errors)
+POST {{server}}/api/vendor/services
+Authorization: Bearer {{vendorTokenReq.response.body.token}}
+Content-Type: application/json
+
+{ "serviceName": "A", "category": "Pizza", "description": "short", "price": -5, "location": "", "images": [] }
+
+### 4. Create a valid service (expect 201, status "pending"). Send this up to 4 times.
+# @name createReq
+POST {{server}}/api/vendor/services
+Authorization: Bearer {{vendorTokenReq.response.body.token}}
+Content-Type: application/json
+
+{
+  "serviceName": "Golden Hour Wedding Photography",
+  "category": "Photography & Videography",
+  "description": "Full-day wedding photography with two photographers and an edited online gallery.",
+  "price": 1500,
+  "location": "Dhaka",
+  "images": ["{{uploadReq.response.body.url}}"]
+}
+
+### 5. List my services (expect 200)
+GET {{server}}/api/vendor/services
+Authorization: Bearer {{vendorTokenReq.response.body.token}}
+
+### 6. Vendor tries the admin route (expect 403)
+GET {{server}}/api/admin/services
+Authorization: Bearer {{vendorTokenReq.response.body.token}}
+
+### 7. Admin lists pending services (expect 200, with vendor info and no email)
+GET {{server}}/api/admin/services?status=pending
+Authorization: Bearer {{adminTokenReq.response.body.token}}
+
+### 8. Admin approves the service (expect 200, status "approved")
+PATCH {{server}}/api/admin/services/{{createReq.response.body.service._id}}/status
+Authorization: Bearer {{adminTokenReq.response.body.token}}
+Content-Type: application/json
+
+{ "status": "approved" }
+
+### 9. Vendor edits the price (expect 200, status goes back to "pending")
+PATCH {{server}}/api/vendor/services/{{createReq.response.body.service._id}}
+Authorization: Bearer {{vendorTokenReq.response.body.token}}
+Content-Type: application/json
+
+{ "price": 1800 }
+
+### 10. Vendor turns availability off (expect 200, isActive false)
+PATCH {{server}}/api/vendor/services/{{createReq.response.body.service._id}}/availability
+Authorization: Bearer {{vendorTokenReq.response.body.token}}
+Content-Type: application/json
+
+{ "isActive": false }
+
+### 11. Invalid service id (expect 404)
+GET {{server}}/api/vendor/services/not-a-real-id
+Authorization: Bearer {{vendorTokenReq.response.body.token}}
+
+### 12. Vendor deletes the service (expect 200)
+DELETE {{server}}/api/vendor/services/{{createReq.response.body.service._id}}
+Authorization: Bearer {{vendorTokenReq.response.body.token}}

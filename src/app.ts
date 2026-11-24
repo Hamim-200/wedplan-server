@@ -6,6 +6,9 @@ import { env } from "./config/env.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import healthRoutes from "./routes/health.routes.js";
 import meRoutes from "./routes/me.routes.js";
+import uploadRoutes from "./routes/upload.routes.js";
+import vendorServiceRoutes from "./routes/vendorService.routes.js";
+import adminServiceRoutes from "./routes/adminService.routes.js";
 
 const app = express();
 
@@ -36,6 +39,9 @@ app.use(express.json({ limit: "1mb" }));
 
 app.use("/api/health", healthRoutes);
 app.use("/api/me", meRoutes); // temporary test routes, removed later
+app.use("/api/upload", uploadRoutes);
+app.use("/api/vendor/services", vendorServiceRoutes);
+app.use("/api/admin/services", adminServiceRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
