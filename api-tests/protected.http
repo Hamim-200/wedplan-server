@@ -1,0 +1,34 @@
+### 1. No token (expect 401)
+GET http://localhost:5000/api/me
+
+### 2. Garbage token (expect 401)
+GET http://localhost:5000/api/me
+Authorization: Bearer this.is.not.a.token
+
+### 3. Sign in as admin (REST Client remembers the cookie)
+# @name signin
+POST http://localhost:3000/api/auth/sign-in/email
+Content-Type: application/json
+Origin: http://localhost:3000
+
+{
+  "email": "admin@wedplan.com",
+  "password": "Admin1234"
+}
+
+### 4. Get a JWT from Better Auth
+# @name tokenReq
+GET http://localhost:3000/api/auth/token
+Origin: http://localhost:3000
+
+### 5. Admin token on /api/me (expect 200, role admin)
+GET http://localhost:5000/api/me
+Authorization: Bearer {{tokenReq.response.body.token}}
+
+### 6. Admin on admin-only route (expect 200)
+GET http://localhost:5000/api/me/admin-only
+Authorization: Bearer {{tokenReq.response.body.token}}
+
+### 7. Admin on vendor-only route (expect 403)
+GET http://localhost:5000/api/me/vendor-only
+Authorization: Bearer {{tokenReq.response.body.token}}

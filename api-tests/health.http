@@ -1,0 +1,5 @@
+### Health check
+GET http://localhost:5000/api/health
+
+### Invalid route (should return 404)
+GET http://localhost:5000/api/nothing

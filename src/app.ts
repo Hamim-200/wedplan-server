@@ -5,6 +5,7 @@ import rateLimit from "express-rate-limit";
 import { env } from "./config/env.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import healthRoutes from "./routes/health.routes.js";
+import meRoutes from "./routes/me.routes.js";
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 
 app.use("/api/health", healthRoutes);
+app.use("/api/me", meRoutes); // temporary test routes, removed later
 
 app.use(notFoundHandler);
 app.use(errorHandler);
