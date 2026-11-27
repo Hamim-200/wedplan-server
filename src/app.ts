@@ -4,6 +4,7 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { env } from "./config/env.js";
+import { stripeWebhook } from "./controllers/webhook.controller.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import healthRoutes from "./routes/health.routes.js";
 import meRoutes from "./routes/me.routes.js";
@@ -18,6 +19,7 @@ import userRoutes from "./routes/user.routes.js";
 import adminUserRoutes from "./routes/adminUser.routes.js";
 import adminStatsRoutes from "./routes/adminStats.routes.js";
 import adminTransactionRoutes from "./routes/adminTransaction.routes.js";
+import paymentRoutes from "./routes/payment.routes.js";
 
 const app = express();
 
@@ -27,6 +29,11 @@ if (env.NODE_ENV === "production") {
 
 app.use(helmet());
 app.use(compression());
+
+// The Stripe webhook MUST come before express.json(), because Stripe's signature
+// is checked against the raw, unparsed body. It is called by Stripe's servers,
+// not by a browser, so it does not need CORS or the rate limiter.
+app.post("/api/payments/webhook", express.raw({ type: "application/json" }), stripeWebhook);
 
 app.use(
   cors({
@@ -47,8 +54,6 @@ app.use(
   })
 );
 
-// NOTE: the Stripe webhook route (added in Phase 12) must be registered
-// BEFORE this line, because Stripe needs the raw request body.
 app.use(express.json({ limit: "1mb" }));
 
 app.use("/api/health", healthRoutes);
@@ -64,6 +69,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/admin/users", adminUserRoutes);
 app.use("/api/admin/stats", adminStatsRoutes);
 app.use("/api/admin/transactions", adminTransactionRoutes);
+app.use("/api/payments", paymentRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

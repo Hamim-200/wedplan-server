@@ -20,5 +20,11 @@ export async function ensureIndexes() {
     },
   ]);
 
+  await db.collection("transactions").createIndexes([
+    // One transaction per Checkout session, so a repeated webhook can never create a duplicate.
+    { key: { stripeSessionId: 1 }, name: "unique_session", unique: true },
+    { key: { vendorId: 1, createdAt: -1 }, name: "vendor_transactions" },
+  ]);
+
   console.log("MongoDB indexes are ready");
 }
