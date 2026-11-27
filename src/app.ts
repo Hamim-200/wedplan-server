@@ -7,7 +7,6 @@ import { env } from "./config/env.js";
 import { stripeWebhook } from "./controllers/webhook.controller.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import healthRoutes from "./routes/health.routes.js";
-import meRoutes from "./routes/me.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import vendorServiceRoutes from "./routes/vendorService.routes.js";
 import adminServiceRoutes from "./routes/adminService.routes.js";
@@ -31,8 +30,7 @@ app.use(helmet());
 app.use(compression());
 
 // The Stripe webhook MUST come before express.json(), because Stripe's signature
-// is checked against the raw, unparsed body. It is called by Stripe's servers,
-// not by a browser, so it does not need CORS or the rate limiter.
+// is checked against the raw, unparsed body.
 app.post("/api/payments/webhook", express.raw({ type: "application/json" }), stripeWebhook);
 
 app.use(
@@ -56,8 +54,17 @@ app.use(
 
 app.use(express.json({ limit: "1mb" }));
 
+// A friendly message for anyone who opens the server link in a browser.
+app.get("/", (_req, res) => {
+  res.json({
+    success: true,
+    name: "WedPlan API",
+    message: "The WedPlan API server is running. Open the website to use WedPlan.",
+    health: "/api/health",
+  });
+});
+
 app.use("/api/health", healthRoutes);
-app.use("/api/me", meRoutes); // temporary test routes, removed later
 app.use("/api/upload", uploadRoutes);
 app.use("/api/vendor/services", vendorServiceRoutes);
 app.use("/api/admin/services", adminServiceRoutes);
