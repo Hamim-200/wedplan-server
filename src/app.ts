@@ -15,6 +15,9 @@ import customerBookingRoutes from "./routes/customerBooking.routes.js";
 import vendorBookingRoutes from "./routes/vendorBooking.routes.js";
 import vendorStatsRoutes from "./routes/vendorStats.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import adminUserRoutes from "./routes/adminUser.routes.js";
+import adminStatsRoutes from "./routes/adminStats.routes.js";
+import adminTransactionRoutes from "./routes/adminTransaction.routes.js";
 
 const app = express();
 
@@ -58,6 +61,9 @@ app.use("/api/customer/bookings", customerBookingRoutes);
 app.use("/api/vendor/bookings", vendorBookingRoutes);
 app.use("/api/vendor/stats", vendorStatsRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/admin/users", adminUserRoutes);
+app.use("/api/admin/stats", adminStatsRoutes);
+app.use("/api/admin/transactions", adminTransactionRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
