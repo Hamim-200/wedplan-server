@@ -34,10 +34,19 @@ function getInvoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
 }
 
 async function onCheckoutPaid(session: Stripe.Checkout.Session) {
-  if (session.mode !== "subscription" || session.payment_status !== "paid") return;
+  console.log(
+    `[webhook] checkout session ${session.id} mode=${session.mode} payment_status=${session.payment_status}`
+  );
+  if (session.mode !== "subscription" || session.payment_status !== "paid") {
+    console.log("[webhook] skipped: not a paid subscription session");
+    return;
+  }
 
   const vendorId = session.metadata?.vendorId ?? session.client_reference_id;
-  if (!vendorId) return;
+  if (!vendorId) {
+    console.log("[webhook] skipped: no vendorId on this session");
+    return;
+  }
 
   const subscriptionId =
     typeof session.subscription === "string"
@@ -163,7 +172,9 @@ export async function stripeWebhook(req: Request, res: Response) {
   }
 
   try {
+    console.log(`[webhook] received ${event.type}`);
     await handleEvent(event);
+    console.log(`[webhook] handled ${event.type}`);
     return res.json({ received: true });
   } catch (error) {
     console.error(`Webhook ${event.type} failed:`, error);
